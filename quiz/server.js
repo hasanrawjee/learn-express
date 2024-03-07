@@ -4,37 +4,44 @@ const express = require('express');
 const app = express();
 var cors = require('cors');
 const port = 8000;
+const { ConnectionStates } = require('mongoose');
 
 let users;
-fs.readFile(path.resolve(__dirname, '../data/users.json'), function(err, data) {
+fs.readFile(path.resolve(__dirname, '../data/users.json'), function (err, data) {
   console.log('reading file ... ');
-  if(err) throw err;
+  if (err) throw err;
   users = JSON.parse(data);
 })
 
 const addMsgToRequest = function (req, res, next) {
-  if(users) {
+  console.log("inside addMsgToRequest ...");
+  if (users) {
     req.users = users;
     next();
   }
   else {
     return res.json({
-        error: {message: 'users not found', status: 404}
+      error: { message: 'users not found', status: 404 }
     });
   }
-  
+
 }
 
 app.use(
-  cors({origin: 'http://localhost:3000'})
+  cors({ origin: 'http://localhost:3000' })
 );
 app.use('/read/usernames', addMsgToRequest);
+app.use('/read/username', addMsgToRequest);
 
 app.get('/read/usernames', (req, res) => {
-  let usernames = req.users.map(function(user) {
-    return {id: user.id, username: user.username};
+  let usernames = req.users.map(function (user) {
+    return { id: user.id, username: user.username };
   });
   res.send(usernames);
+});
+app.get('/read/username/:name', (req, res) => {
+  let user = req.users.filter((user) => user.username === req.params.name)[0];
+  res.send([{ id: user.id, email: user.email }]);
 });
 
 app.use(express.json());
